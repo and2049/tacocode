@@ -1,22 +1,81 @@
 import { palette } from "./theme"
+import type { VimMode } from "../vendor/redsun/packages/tui/src/vim"
 
-export const bell = [
-  "   sPPPPPs   ",
-  " sPPPPPPPPPs ",
-  "sPLLLGMMMMPPs",
-  "PllLLLWGMKGMP",
-  "PlWWWLWWLLWGP",
-  "PlWWWWWLL WKP",
-  "PGWWWWL  kWSP",
-  "PgWWWL kkWWSP",
-  "PSGWL  kWWSSP",
-  "PSSLL  WWGSSP",
-  "PSKL kWWSSSSP",
-  "PSGLWWWGSSSSP",
-  "PSSGKSSSSSSSP",
-  "dDDDDDDDDDDDd",
-  "EeDDDDDDDDDeE",
-] as const
+export type PixelArt = Readonly<{ rows: readonly string[]; colors: Readonly<Record<string, string>> }>
+
+export const bell: PixelArt = {
+  rows: [
+    "   sPPPPPs   ",
+    " sPPPPPPPPPs ",
+    "sPLLLGMMMMPPs",
+    "PllLLLWGMKGMP",
+    "PlWWWLWWLLWGP",
+    "PlWWWWWLL WKP",
+    "PGWWWWL  kWSP",
+    "PgWWWL kkWWSP",
+    "PSGWL  kWWSSP",
+    "PSSLL  WWGSSP",
+    "PSKL kWWSSSSP",
+    "PSGLWWWGSSSSP",
+    "PSSGKSSSSSSSP",
+    "dDDDDDDDDDDDd",
+    "EeDDDDDDDDDeE",
+  ],
+  colors: {
+    P: palette.purple,
+    W: palette.white,
+    L: "#ECDCF7",
+    l: "#F1E8F1",
+    S: "#342047",
+    s: "#2F1B43",
+    M: "#3B2056",
+    G: "#665671",
+    g: "#58456A",
+    K: "#AD9CBA",
+    k: "#434045",
+    D: "#7B3CB4",
+    d: "#8C40C6",
+    E: "#7436A6",
+    e: "#683399",
+  },
+}
+
+export const taco: PixelArt = {
+  rows: [
+    "        cf  gf          ",
+    "        cgccgf          ",
+    "     cchhccfccff        ",
+    "    idgdjccccjcklb      ",
+    "   iijedhegjmblbbbi     ",
+    "   nigmjcjollbbbbbbi    ",
+    "  nibbbccbbbbbbbbbbbi   ",
+    " iiebbhcllbbbbbbbbbbi   ",
+    "indejjcjbbbbbbbbbbbbij  ",
+    "liembehlbbbbbbbbbbbiid  ",
+    "ipeje bbbbbbbbbbbiiide  ",
+    "ihee mbiiiiiiimdmdmee   ",
+    "jih  biiiimdddeeeee     ",
+    " jibimdeeee             ",
+    "   eeee                 ",
+  ],
+  colors: {
+    b: "#F8AE1A",
+    c: "#42773A",
+    d: "#A72517",
+    e: "#652E11",
+    f: "#9CC858",
+    g: "#78AD54",
+    h: "#897C52",
+    i: "#C68037",
+    j: "#7B5A26",
+    k: "#6C8A2E",
+    l: "#F7DA3F",
+    m: "#C26F09",
+    n: "#E5A84A",
+    o: "#BAA210",
+    p: "#A85F41",
+  },
+}
 
 const letters: Record<string, readonly string[]> = {
   T: ["11111", "11111", "01110", "01110", "01110", "01110", "01110"],
@@ -27,46 +86,35 @@ const letters: Record<string, readonly string[]> = {
   E: ["11111", "11111", "11000", "11110", "11000", "11111", "11111"],
 }
 
-export const wordmark = Array.from({ length: 7 }, (_, row) =>
-  Array.from("TACOCODE", (letter, index) =>
-    letters[letter]![row]!.replaceAll("1", index < 4 ? "W" : "P").replaceAll("0", " "),
-  ).join(" "),
-)
-
-const colors: Record<string, string> = {
-  " ": palette.background,
-  P: palette.purple,
-  W: palette.white,
-  L: "#ECDCF7",
-  l: "#F1E8F1",
-  S: "#342047",
-  s: "#2F1B43",
-  M: "#3B2056",
-  G: "#665671",
-  g: "#58456A",
-  K: "#AD9CBA",
-  k: "#434045",
-  D: "#7B3CB4",
-  d: "#8C40C6",
-  E: "#7436A6",
-  e: "#683399",
+export const wordmark: PixelArt = {
+  rows: Array.from({ length: 7 }, (_, row) =>
+    Array.from("TACOCODE", (letter, index) =>
+      letters[letter]![row]!.replaceAll("1", index < 4 ? "W" : "P").replaceAll("0", " "),
+    ).join(" "),
+  ),
+  colors: { P: palette.purple, W: palette.white },
 }
 
 export type PixelCell = Readonly<{ char: string; fg: string; bg: string }>
 
-export function pixels(rows: readonly string[]): readonly (readonly PixelCell[])[] {
-  const width = Math.max(0, ...rows.map((row) => row.length))
-  return Array.from({ length: Math.ceil(rows.length / 2) }, (_, y) =>
+export function pixels(art: PixelArt): readonly (readonly PixelCell[])[] {
+  const width = Math.max(0, ...art.rows.map((row) => row.length))
+  const color = (y: number, x: number) => art.colors[art.rows[y]?.[x] ?? " "] ?? palette.background
+  return Array.from({ length: Math.ceil(art.rows.length / 2) }, (_, y) =>
     Array.from({ length: width }, (_, x) => {
-      const top = colors[rows[y * 2]?.[x] ?? " "] ?? palette.background
-      const bottom = colors[rows[y * 2 + 1]?.[x] ?? " "] ?? palette.background
+      const top = color(y * 2, x)
+      const bottom = color(y * 2 + 1, x)
       return { char: top === bottom ? " " : "▀", fg: top, bg: bottom }
     }),
   )
 }
 
-export function logoSize(width: number, height: number): "bell" | "wordmark" | "text" | "hidden" {
+export function logoIcon(mode: VimMode): PixelArt {
+  return mode === "insert" ? bell : taco
+}
+
+export function logoSize(width: number, height: number): "icon" | "wordmark" | "text" | "hidden" {
   if (width < 8 || height < 10) return "hidden"
-  if (width < wordmark[0]!.length || height < 20) return "text"
-  return height >= 26 ? "bell" : "wordmark"
+  if (width < wordmark.rows[0]!.length || height < 20) return "text"
+  return height >= 26 ? "icon" : "wordmark"
 }

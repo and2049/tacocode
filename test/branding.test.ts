@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { withoutTheme } from "../src/config"
-import { bell, logoSize, pixels, wordmark } from "../src/logo-art"
+import { bell, logoIcon, logoSize, pixels, taco, wordmark } from "../src/logo-art"
 import { fixedTheme, palette } from "../src/theme"
 import { colorToHex } from "@opencode/theme/tui"
 import { overlays } from "../script/overlays"
@@ -27,16 +27,16 @@ test("resolves the fixed dark palette and meaningful feedback colors", () => {
 })
 
 test("logo scales down before it consumes the prompt area", () => {
-  expect(logoSize(120, 40)).toBe("bell")
-  expect(logoSize(100, 27)).toBe("bell")
+  expect(logoSize(120, 40)).toBe("icon")
+  expect(logoSize(100, 27)).toBe("icon")
   expect(logoSize(100, 24)).toBe("wordmark")
   expect(logoSize(40, 20)).toBe("text")
   expect(logoSize(100, 9)).toBe("hidden")
-  expect(new Set(wordmark.map((row) => row.length)).size).toBe(1)
-  expect(new Set(bell.map((row) => row.length)).size).toBe(1)
+  for (const art of [wordmark, bell, taco]) expect(new Set(art.rows.map((row) => row.length)).size).toBe(1)
   expect(pixels(bell)).toHaveLength(8)
+  expect(pixels(taco)).toHaveLength(8)
   expect(pixels(wordmark)).toHaveLength(4)
-  expect(pixels(["WP", "PW"])[0]).toEqual([
+  expect(pixels({ rows: ["WP", "PW"], colors: wordmark.colors })[0]).toEqual([
     { char: "▀", fg: palette.white, bg: palette.purple },
     { char: "▀", fg: palette.purple, bg: palette.white },
   ])
@@ -60,4 +60,10 @@ test("every overlay applies to the pinned redsun source", async () => {
       expect(result).toContain("return theme === FALLBACK_THEME")
     }
   }
+})
+
+test("shows the bell while typing and the taco in vim normal and command modes", () => {
+  expect(logoIcon("insert")).toBe(bell)
+  expect(logoIcon("normal")).toBe(taco)
+  expect(logoIcon("command")).toBe(taco)
 })

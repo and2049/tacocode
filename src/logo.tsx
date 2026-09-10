@@ -1,6 +1,7 @@
 import { For, Show, createMemo } from "solid-js"
 import { useTerminalDimensions } from "@opentui/solid"
-import { bell, logoSize, pixels, wordmark, type PixelCell } from "./logo-art"
+import { useVim } from "../vendor/redsun/packages/tui/src/context/vim"
+import { logoIcon, logoSize, pixels, wordmark, type PixelCell } from "./logo-art"
 import { palette } from "./theme"
 
 function PixelArt(props: { rows: readonly (readonly PixelCell[])[] }) {
@@ -17,17 +18,18 @@ function PixelArt(props: { rows: readonly (readonly PixelCell[])[] }) {
   )
 }
 
-const icon = pixels(bell)
 const word = pixels(wordmark)
 
 export function Logo() {
   const dimensions = useTerminalDimensions()
+  const vim = useVim()
   const size = createMemo(() => logoSize(dimensions().width, dimensions().height))
+  const icon = createMemo(() => pixels(logoIcon(vim.mode)))
   return (
     <Show when={size() !== "hidden"}>
       <box alignItems="center" flexShrink={0}>
-        <Show when={size() === "bell"}>
-          <PixelArt rows={icon} />
+        <Show when={size() === "icon"}>
+          <PixelArt rows={icon()} />
           <box height={1} />
         </Show>
         <Show when={size() !== "text"} fallback={
