@@ -1,31 +1,16 @@
 import { expect, test } from "bun:test"
-import { withoutTheme } from "../src/config"
-import { bell, logoSize, pixels, runs, taco, wordmark, wordmarkWith } from "../src/logo-art"
-import { backdrop, tint } from "../src/backdrop-art"
-import { look } from "../src/look"
-import { fixedTheme, palette, warm, warmTheme } from "../src/theme"
-import { colorToHex } from "@opencode/theme/tui"
-import { overlays } from "../script/overlays"
-import pkg from "../package.json"
-import upstream from "../vendor/redsun/package.json"
+import { bell, logoSize, pixels, runs, taco, wordmark, wordmarkWith } from "../plugin/logo-art"
+import { backdrop, tint } from "../plugin/backdrop-art"
+import { look } from "../plugin/look"
+import { palette, tacoTheme, warm, warmTheme } from "../plugin/theme"
 
-test("uses redsun's exact dependency catalog and upstream patches", () => {
-  expect(pkg.workspaces.catalog).toEqual(upstream.workspaces.catalog)
-  expect<Record<string, string>>(pkg.patchedDependencies).toEqual(Object.fromEntries(
-    Object.entries(upstream.patchedDependencies).map(([name, file]) => [name, `vendor/redsun/${file}`]),
-  ))
-})
-
-test("ignores even a malformed theme without losing other preferences", () => {
-  const original = { theme: 123, plugins: ["example"], scroll: { speed: 3 } }
-  expect(withoutTheme(original)).toEqual({ plugins: ["example"], scroll: { speed: 3 } })
-  expect(original.theme).toBe(123)
-})
-
-test("resolves the fixed dark palette and meaningful feedback colors", () => {
-  expect(colorToHex(fixedTheme.background.default).toLowerCase()).toBe(palette.background.toLowerCase())
-  expect(colorToHex(fixedTheme.text.default).toLowerCase()).toBe(palette.white.toLowerCase())
-  expect(fixedTheme.text.feedback.error.default).not.toEqual(fixedTheme.text.feedback.success.default)
+test("theme documents are dark, flat v1 palettes built on the Taco Code colours", () => {
+  expect(tacoTheme.mode).toBe("dark")
+  expect(tacoTheme.theme.background).toBe(palette.background)
+  expect(tacoTheme.theme.text).toBe(palette.white)
+  expect(tacoTheme.theme.error).not.toBe(tacoTheme.theme.success)
+  expect(warmTheme.theme.background).toBe(warm.background)
+  expect(warmTheme.theme.text).toBe(palette.white)
 })
 
 test("logo scales down before it consumes the prompt area", () => {
@@ -44,27 +29,6 @@ test("logo scales down before it consumes the prompt area", () => {
   ])
 })
 
-test("every overlay applies to the pinned redsun source", async () => {
-  for (const [name, transform] of Object.entries(overlays)) {
-    const text = (await Bun.file(`vendor/redsun/packages/${name}`).text()).replaceAll("\r\n", "\n")
-    const result = transform(text)
-    expect(result).not.toBe(text)
-    if (name === "tui/src/app.tsx") {
-      expect(result).not.toContain('name: "theme.switch"')
-      expect(result).not.toContain("DialogThemeList")
-      expect(result).toContain('renderer.setTerminalTitle("tacocode")')
-      expect(result).toContain('name: "permission.mode"')
-    }
-    if (name === "tui/src/routes/home.tsx") expect(result).toContain("<Backdrop />\n      <box")
-    if (name === "tui/src/component/dialog-config.tsx") expect(result).not.toContain('title: "Theme"')
-    if (name === "tui/src/context/theme.tsx") {
-      expect(result).not.toContain("config.theme")
-      expect(result).not.toContain("draft.theme")
-      expect(result).toContain('setStore("active", theme)\n        return true')
-    }
-  }
-})
-
 test("shows the bell while typing and the warm taco look in vim normal and command modes", () => {
   expect(look("insert")).toMatchObject({ icon: bell, accent: palette.purple, base: palette.background, theme: "tacocode" })
   expect(look("normal")).toMatchObject({ icon: taco, accent: "#F2B33E", base: warm.background, theme: "tacocode-warm" })
@@ -72,15 +36,26 @@ test("shows the bell while typing and the warm taco look in vim normal and comma
   expect(look("normal").tints).not.toEqual(look("insert").tints)
   expect(wordmarkWith("#F2B33E").colors.P).toBe("#F2B33E")
   expect(wordmarkWith("#F2B33E").rows).toBe(wordmark.rows)
-  expect(warmTheme.theme.background).toBe(warm.background)
-  expect(warmTheme.theme.text).toBe(palette.white)
-  expect(pixels({ rows: ["W", " "], colors: wordmark.colors }, warm.background)[0]).toEqual([{ char: "▀", fg: palette.white, bg: warm.background }])
+  expect(pixels({ rows: ["W", " "], colors: wordmark.colors }, warm.background)[0]).toEqual([
+    { char: "▀", fg: palette.white, bg: warm.background },
+  ])
 })
 
 test("blank pixel cells stay transparent and runs merge identical neighbours", () => {
   const blank = { char: " ", fg: "transparent", bg: "transparent" }
-  expect(pixels({ rows: [" W", "  "], colors: wordmark.colors })[0]).toEqual([blank, { char: "▀", fg: palette.white, bg: palette.background }])
-  expect(runs([blank, blank, { char: "▀", fg: "#000000", bg: "#FFFFFF" }, { char: "▀", fg: "#000000", bg: "#FFFFFF" }, blank])).toEqual([
+  expect(pixels({ rows: [" W", "  "], colors: wordmark.colors })[0]).toEqual([
+    blank,
+    { char: "▀", fg: palette.white, bg: palette.background },
+  ])
+  expect(
+    runs([
+      blank,
+      blank,
+      { char: "▀", fg: "#000000", bg: "#FFFFFF" },
+      { char: "▀", fg: "#000000", bg: "#FFFFFF" },
+      blank,
+    ]),
+  ).toEqual([
     { text: "  ", fg: "transparent", bg: "transparent" },
     { text: "▀▀", fg: "#000000", bg: "#FFFFFF" },
     { text: " ", fg: "transparent", bg: "transparent" },

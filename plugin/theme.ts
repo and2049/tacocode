@@ -1,5 +1,3 @@
-import { parseTheme, resolveThemeDocument } from "@opencode/theme/tui"
-
 export const palette = {
   background: "#120F18",
   panel: "#211C27",
@@ -74,7 +72,11 @@ export const tacoTheme = {
 
 export const warmTheme = {
   ...tacoTheme,
-  theme: { ...tacoTheme.theme, background: warm.background, backgroundPanel: warm.panel, backgroundElement: warm.element, borderSubtle: warm.borderSubtle },
+  theme: {
+    ...tacoTheme.theme,
+    background: warm.background,
+    backgroundPanel: warm.panel,
+    backgroundElement: warm.element,
+    borderSubtle: warm.borderSubtle,
+  },
 } as const
-
-export const fixedTheme = resolveThemeDocument(parseTheme(tacoTheme, "tacocode"), "dark")

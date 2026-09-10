@@ -9,5 +9,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src", "script", "test"]
+  "include": ["src", "plugin", "script", "test"]
 }

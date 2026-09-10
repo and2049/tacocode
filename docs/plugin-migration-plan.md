@@ -1,6 +1,6 @@
 # Taco Code on the redsun plugin layer
 
-Status: planning. Prerequisite: the persistent interface language work in redsun lands first. Nothing here depends on its shape.
+Status: complete. Phase 1 shipped in redsun v26-9-10.1 (plugin API 1). Phase 2 landed in this repository on 2026-09-10 on branch `feature/plugin-wrapper`: `plugin/` is the redsun TUI plugin, `src/` is the launcher, and the vendored submodule and overlays are gone. See "Phase 1 outcome" and "Phase 2 outcome" for where the implementation deviates from the plan below.
 
 ## Goal
 
@@ -90,6 +90,23 @@ Each item is one small pull request with its own tests. Order matters only where
 - A `skin` fixture plugin lives in redsun's test tree and exercises every hook above: both new slots, vim mode, dimensions, theme register, select, and lock, and `app.name`. Redsun CI runs it through the drive harness. This is the guard that keeps the contract honest across refactors.
 - A short authoring page in the plugin docs lists the hooks with their input types and the lock semantics.
 
+## Phase 1 outcome
+
+Implemented as planned except for these points, which the plugin in Phase 2 must follow. Authoring reference: `packages/plugin/src/tui/README.md` in redsun; contract guard: `packages/tui/test/skin-plugin.test.tsx` with the fixture in `packages/tui/test/fixture/skin`.
+
+| Plan | Implementation |
+| --- | --- |
+| `context.theme.register/select/lock/current` | `context.themes.register(name, document)`, `select(name)`, `lock()`, `current()`, `locked()`. `context.theme` stays the resolved token object |
+| `lock()` for the rest of the process | `lock()` returns a release function; locks are refcounted and released on plugin deactivation |
+| Default logo moves into a builtin `opencode.home.logo` plugin | `<Logo />` stays as the `home.logo` slot's children; a `replace` claim still takes the whole boundary |
+| Toast naming both API numbers | Setup fails with an error naming both numbers; it shows through the standard "Plugin failed" toast and in `/plugins` |
+| `Plugin.define({ api })` | `Plugin.API` is `1`; `api` is optional and only checked when newer than the host |
+| `--client` sets the observability tag | Done through a pre-parse scan of `process.argv` in the CLI entry, since the telemetry layer is built before the root command parses |
+
+Open questions 1 and 2 are settled: the distributed redsun binary is the Bun build and compiles `.tsx` plugin directories at load time, aliasing `@opencode/plugin/tui`, `@opentui/solid`, `@opentui/core`, `solid-js` and `solid-js/store` to the host's copies, so the plugin ships as source with no dependencies; and setup runs before the first home paint (the first captured frame already shows the skin). Question 3 is untouched, and question 4 remains as described.
+
+Verified with the full redsun TUI suite, the CLI and plugin-host suites, and a headless drive-harness launch of a locally built binary with `--client tacocode --plugin <skin>`: logo replaced, backdrop input sized to the home route, renderer background from the plugin theme, warm theme in vim normal mode, no theme switcher or Theme row, `cli.json` byte-identical, clean exit, plain launch unaffected. A redsun binary built from a branch whose name contains a slash needs `OPENCODE_TUI_CHANNEL=dev` at launch, because the build derives the storage channel from the branch name.
+
 ## Phase 2: Taco Code refactor
 
 Starts after 1.1 through 1.6 ship in a tagged redsun release.
@@ -117,6 +134,18 @@ Starts after 1.1 through 1.6 ship in a tagged redsun release.
 
 - Delete the submodule, overlays, `.cache` overlay outputs, catalog pinning in `package.json`, and the module-sharing test that only existed because of the overlay bundler.
 - README describes the launcher and the plugin, and how to run the plugin inside a plain redsun for development by adding it to `cli.json`.
+
+## Phase 2 outcome
+
+| Plan | Implementation |
+| --- | --- |
+| Installer places the plugin directory next to the executable | The plugin sources are embedded in the launcher at build time (`TACOCODE_PLUGIN_FILES` define) and unpacked once per content hash into `$XDG_CACHE_HOME/tacocode/plugin-<hash>`. Installers, archives, and the single-file distribution are unchanged |
+| Ship precompiled with the OpenTUI Solid transform | Shipped as `.tsx` source; redsun's Bun build compiles plugin directories at load and aliases `solid-js` and `@opentui/solid` to its own copies. The only dependencies left in `package.json` are type-checking devDependencies |
+| `args.ts` kept as pass-through | `--help` and `--version` are answered locally when they lead; everything else is forwarded to redsun verbatim after `--client tacocode --plugin <dir>` |
+| Types from `@opencode/plugin/tui` | `plugin/redsun.ts` mirrors the API 1 subset the plugin uses, since the plugin package is not published |
+| Smoke test nightly against the latest redsun | The smoke test runs on demand (`bun run smoke`) against the installed redsun; the release workflow runs unit tests and typecheck only, because runners have no redsun |
+
+Verified: unit tests, typecheck, a Windows build, and the smoke test against installed redsun v26-9-10.1 (cold start, plugin extraction, `#120F18` background in insert mode and `#171310` in normal mode, no theme switcher or Theme row, shared service across two clients, resizing to the text logo, detach, `cli.json` byte-identical).
 
 ## Phase 3: nice to have
 

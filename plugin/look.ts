@@ -1,5 +1,5 @@
-import type { VimMode } from "../vendor/redsun/packages/tui/src/vim"
 import { bell, taco, type PixelArt } from "./logo-art"
+import type { VimMode } from "./redsun"
 import { palette, warm } from "./theme"
 
 export type Look = Readonly<{ theme: string; icon: PixelArt; accent: string; base: string; tints: readonly string[] }>

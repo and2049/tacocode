@@ -1,21 +1,31 @@
 import { expect, test } from "bun:test"
-import { argumentsFor, serverURL } from "../src/args"
+import { argumentsFor } from "../src/args"
+import { launchArguments } from "../src/redsun"
 
-test("preserves TUI session options and a directory containing spaces", () => {
-  const input = argumentsFor(["C:/my project", "-c", "--session", "ses_example", "--agent", "plan", "--prompt", "hello", "--yolo"])
-  expect(input.directory).toBe("C:/my project")
-  expect(input.args).toMatchObject({ continue: true, sessionID: "ses_example", agent: "plan", prompt: "hello", auto: true })
+test("passes every argument through to redsun after the launch flags", () => {
+  const input = argumentsFor(["C:/my project", "-c", "--session", "ses_example", "--prompt", "hello", "--yolo"])
+  expect(input.help).toBe(false)
+  expect(input.version).toBe(false)
+  expect(launchArguments("C:/plugin", input.args)).toEqual([
+    "--client",
+    "tacocode",
+    "--plugin",
+    "C:/plugin",
+    "C:/my project",
+    "-c",
+    "--session",
+    "ses_example",
+    "--prompt",
+    "hello",
+    "--yolo",
+  ])
 })
 
-test("does not grant auto approval by default", () => {
-  expect(argumentsFor([]).args.auto).toBeFalsy()
-})
-
-test("rejects invalid arguments and credential-bearing server URLs", () => {
-  expect(() => argumentsFor(["one", "two"])).toThrow("Usage")
-  expect(() => argumentsFor(["--theme", "dusk"])).toThrow()
-  expect(() => argumentsFor(["--session"])).toThrow()
-  expect(() => serverURL("file:///server")).toThrow()
-  expect(() => serverURL("https://user:password@example.com")).toThrow()
-  expect(serverURL("http://127.0.0.1:1234/\n")).toBe("http://127.0.0.1:1234")
+test("answers help and version locally only when they lead", () => {
+  expect(argumentsFor(["--help"]).help).toBe(true)
+  expect(argumentsFor(["-h"]).help).toBe(true)
+  expect(argumentsFor(["--version"]).version).toBe(true)
+  expect(argumentsFor(["-v"]).version).toBe(true)
+  expect(argumentsFor(["--prompt", "--help"]).help).toBe(false)
+  expect(argumentsFor([]).args).toEqual([])
 })

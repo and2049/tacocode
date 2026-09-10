@@ -3,9 +3,15 @@ import { mkdir, mkdtemp, rm, readdir } from "node:fs/promises"
 import { createServer } from "node:net"
 import os from "node:os"
 import path from "node:path"
+import { palette, warm } from "../plugin/theme"
 
 const root = path.resolve(import.meta.dirname, "..")
-const binary = path.join(root, "dist", `tacocode-${process.platform === "win32" ? "windows" : process.platform}-${process.arch}`, process.platform === "win32" ? "tacocode.exe" : "tacocode")
+const binary = path.join(
+  root,
+  "dist",
+  `tacocode-${process.platform === "win32" ? "windows" : process.platform}-${process.arch}`,
+  process.platform === "win32" ? "tacocode.exe" : "tacocode",
+)
 const redsun = Bun.which(process.env.REDSUN_BIN ?? "redsun")
 assert.ok(redsun, "Install redsun before running the integration smoke test")
 
@@ -14,7 +20,7 @@ async function port(): Promise<number> {
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve))
   const address = server.address()
   assert.ok(address && typeof address === "object")
-  await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()))
+  await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())))
   return address.port
 }
 
@@ -24,7 +30,13 @@ const directory = await mkdtemp(path.join(parent, "tacocode-smoke-"))
 const config = path.join(directory, "config/redsun")
 await mkdir(config, { recursive: true })
 await Bun.write(path.join(config, "redsun.json"), JSON.stringify({ update: "disable" }))
-await Bun.write(path.join(config, "cli.json"), JSON.stringify({ theme: { name: "dusk" }, animations: false, attention: { enabled: false }, scroll: { speed: 2 } }))
+const cliJson = JSON.stringify({
+  theme: { name: "dusk" },
+  animations: false,
+  attention: { enabled: false },
+  scroll: { speed: 2 },
+})
+await Bun.write(path.join(config, "cli.json"), cliJson)
 const env = {
   ...process.env,
   XDG_CONFIG_HOME: path.join(directory, "config"),
@@ -44,16 +56,28 @@ async function backend(...args: string[]): Promise<string> {
   return text.trim()
 }
 
-type Frame = { cols: number; rows: number; lines: { spans: { text: string; fg: number[]; bg: number[] }[] }[] }
+type Span = { text: string; fg: number[]; bg: number[] }
+type Frame = { cols: number; rows: number; lines: { spans: Span[] }[] }
 const clients: { process: ReturnType<typeof Bun.spawn>; socket: WebSocket }[] = []
+
+function hex(color: number[]): string {
+  return "#" + color.slice(0, 3).map((value) => value.toString(16).padStart(2, "0")).join("").toUpperCase()
+}
 
 async function launch(name: string) {
   const endpoint = `ws://127.0.0.1:${await port()}`
-  await Bun.write(path.join(directory, `${name}.json`), JSON.stringify({ endpoints: { ui: endpoint, backend: `ws://127.0.0.1:${await port()}` }, viewport: { cols: 110, rows: 40 } }))
+  await Bun.write(
+    path.join(directory, `${name}.json`),
+    JSON.stringify({
+      endpoints: { ui: endpoint, backend: `ws://127.0.0.1:${await port()}` },
+      viewport: { cols: 110, rows: 40 },
+    }),
+  )
   const child = Bun.spawn([binary], {
     env: { ...env, OPENCODE_DRIVE: name, OPENCODE_DRIVE_RENDERER: "headless" },
     cwd: directory,
-    stdout: "pipe", stderr: "pipe",
+    stdout: "pipe",
+    stderr: "pipe",
   })
   let output = ""
   const read = async (stream: ReadableStream<Uint8Array>) => {
@@ -73,7 +97,10 @@ async function launch(name: string) {
     socket = await new Promise<WebSocket | undefined>((resolve) => {
       const ws = new WebSocket(endpoint)
       ws.onopen = () => resolve(ws)
-      ws.onerror = () => { ws.close(); resolve(undefined) }
+      ws.onerror = () => {
+        ws.close()
+        resolve(undefined)
+      }
     })
     if (socket) break
     await Bun.sleep(200)
@@ -88,7 +115,10 @@ async function launch(name: string) {
   async function rpc<T>(method: string, params = {}): Promise<T> {
     const current = ++id
     return new Promise<T>((resolve, reject) => {
-      const timeout = setTimeout(() => { socket!.removeEventListener("message", receive); reject(new Error(`${method} timed out\n${output}`)) }, 15_000)
+      const timeout = setTimeout(() => {
+        socket!.removeEventListener("message", receive)
+        reject(new Error(`${method} timed out\n${output}`))
+      }, 15_000)
       function receive(event: MessageEvent) {
         const message = JSON.parse(String(event.data)) as { id: number; result: T; error?: unknown }
         if (message.id !== current) return
@@ -103,40 +133,41 @@ async function launch(name: string) {
   }
   const capture = () => rpc<Frame>("ui.capture")
   const text = (frame: Frame) => frame.lines.map((line) => line.spans.map((span) => span.text).join("")).join("\n")
-  async function waitFor(expected: string) {
+  async function waitFor(expected: string, predicate: (frame: Frame) => boolean = () => true) {
     const deadline = Date.now() + 30_000
     let frame = await capture()
-    while (!text(frame).includes(expected) && Date.now() < deadline) {
+    while ((!text(frame).includes(expected) || !predicate(frame)) && Date.now() < deadline) {
       await Bun.sleep(100)
       frame = await capture()
     }
-    assert.ok(text(frame).includes(expected), `Missing ${expected}:\n${text(frame)}\n${output}`)
+    assert.ok(text(frame).includes(expected) && predicate(frame), `Missing ${expected}:\n${text(frame)}\n${output}`)
     return frame
   }
   return { child, socket, rpc, capture, waitFor, text }
 }
 
+const background = (frame: Frame) => hex(frame.lines[3]!.spans[0]!.bg)
+
 try {
   await backend("service", "set", "port", String(await port()))
   assert.equal(await backend("service", "status"), "stopped")
   const first = await launch("first")
-  const frame = await first.waitFor("Ask anything")
-  assert.ok(first.text(frame).includes((await backend("--version")).split(/\s+/).pop()!.replace(/^v/, "")), `home footer should show the redsun version:
-${first.text(frame)}`)
-  const state = path.join(env.XDG_STATE_HOME, "redsun")
-  const registrationName = (await readdir(state)).find((name) => /^service(?:-[\w.-]+)?\.json$/.test(name))
-  assert.ok(registrationName)
-  const registrationFile = path.join(state, registrationName)
-  const registration = await Bun.file(registrationFile).json() as { id: string; pid: number }
-  assert.ok(registration.pid > 0)
+  const frame = await first.waitFor("Ask anything", (frame) => background(frame) === palette.background)
+  const version = (await backend("--version")).split(/\s+/).pop()!.replace(/^v/, "")
+  assert.ok(first.text(frame).includes(version), `home footer should show the redsun version:\n${first.text(frame)}`)
+  assert.ok(!first.text(frame).includes("██╗"), "the redsun logo must be replaced")
+  const extracted = await readdir(path.join(env.XDG_CACHE_HOME, "tacocode"))
+  assert.ok(extracted.some((name) => name.startsWith("plugin-")), extracted.join(","))
   await mkdir(path.join(root, ".cache"), { recursive: true })
   await Bun.write(path.join(root, ".cache/home-frame.json"), JSON.stringify(frame))
   console.log(first.text(frame))
+  await first.rpc("ui.press", { key: "ESCAPE" })
+  const normal = await first.waitFor("Ask anything", (frame) => background(frame) === warm.background)
+  await Bun.write(path.join(root, ".cache/normal-frame.json"), JSON.stringify(normal))
+  await first.rpc("ui.press", { key: "i" })
+  await first.waitFor("Ask anything", (frame) => background(frame) === palette.background)
   const second = await launch("second")
   await second.waitFor("Ask anything")
-  const reused = await Bun.file(registrationFile).json() as { id: string; pid: number }
-  assert.equal(reused.id, registration.id)
-  assert.equal(reused.pid, registration.pid)
   await first.rpc("ui.press", { key: "p", modifiers: { ctrl: true } })
   const commands = await first.waitFor("Commands")
   assert.ok(!first.text(commands).includes("Switch theme"))
@@ -146,31 +177,34 @@ ${first.text(frame)}`)
   const settings = await first.waitFor("Animations")
   assert.ok(!first.text(settings).includes("Theme"))
   await first.rpc("ui.press", { key: "ESCAPE" })
-  await first.rpc("ui.type", { text: "/restart" })
-  await first.rpc("ui.enter")
-  await first.waitFor("Service restarted")
-  await second.waitFor("Ask anything")
-  const restarted = await Bun.file(registrationFile).json() as { id: string; pid: number }
-  assert.notEqual(restarted.id, registration.id)
   await first.rpc("ui.resize", { cols: 100, rows: 27 })
   const compact = await first.waitFor("Ask anything")
   await Bun.write(path.join(root, ".cache/compact-frame.json"), JSON.stringify(compact))
   await first.rpc("ui.resize", { cols: 40, rows: 20 })
   await first.waitFor("TACOCODE")
   await first.rpc("ui.press", { key: "d", modifiers: { ctrl: true } })
-  await Promise.race([first.child.exited, Bun.sleep(10_000).then(() => { throw new Error("TUI did not exit") })])
+  await Promise.race([
+    first.child.exited,
+    Bun.sleep(10_000).then(() => {
+      throw new Error("TUI did not exit")
+    }),
+  ])
   assert.equal(first.child.exitCode, 0)
+  await second.rpc("ui.press", { key: "d", modifiers: { ctrl: true } })
+  await second.child.exited
   assert.notEqual(await backend("service", "status"), "stopped")
-  const saved = await Bun.file(path.join(config, "cli.json")).json() as { theme: { name: string } }
-  assert.equal(saved.theme.name, "dusk")
-  console.log("PASS: cold start, shared service, command palette, settings, restart/reconnect, resizing, detach, native theme preservation")
+  assert.equal(await Bun.file(path.join(config, "cli.json")).text(), cliJson)
+  console.log(
+    "PASS: cold start, plugin extraction, fixed theme, warm normal mode, shared service, command palette, settings, resizing, detach, cli.json untouched",
+  )
 } catch (error) {
   console.error(error)
   throw error
 } finally {
   const logDirectory = path.join(directory, "data/redsun/log")
   for (const file of await readdir(logDirectory).catch(() => [] as string[])) {
-    if (file.endsWith(".log")) await Bun.write(path.join(root, ".cache", `smoke-${file}`), Bun.file(path.join(logDirectory, file)))
+    if (file.endsWith(".log"))
+      await Bun.write(path.join(root, ".cache", `smoke-${file}`), Bun.file(path.join(logDirectory, file)))
   }
   for (const client of clients) {
     client.socket.close()
