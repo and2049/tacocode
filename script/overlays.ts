@@ -17,8 +17,8 @@ export const overlays: Readonly<Record<string, (text: string) => string>> = {
     return `import { Backdrop } from ${source("backdrop.tsx")}\n${text}`
   },
   "tui/src/theme/index.ts": (text) => {
-    text = replace(text, "return { ...DEFAULT_THEMES, ...pluginThemes, ...customThemes }", "return { tacocode: tacoTheme }")
-    return `import { tacoTheme } from ${source("theme.ts")}\n${text}`
+    text = replace(text, "return { ...DEFAULT_THEMES, ...pluginThemes, ...customThemes }", 'return { tacocode: tacoTheme, "tacocode-warm": warmTheme }')
+    return `import { tacoTheme, warmTheme } from ${source("theme.ts")}\n${text}`
   },
   "tui/src/context/theme.tsx": (text) => {
     text = replace(text, 'const FALLBACK_THEME = "dusk"', 'const FALLBACK_THEME = "tacocode"')
@@ -32,7 +32,9 @@ export const overlays: Readonly<Record<string, (text: string) => string>> = {
             draft.theme = { ...draft.theme, name: theme }
           })
           .catch(() => {})
-        return true`, "        return theme === FALLBACK_THEME")
+        return true`, `        if (!hasTheme(theme)) return false
+        setStore("active", theme)
+        return true`)
   },
   "tui/src/app.tsx": (text) => {
     text = replace(text, "fallback={(error, reset) => (", 'fallback={(error, reset) => (log("error", "Taco Code render failed", { error }),')

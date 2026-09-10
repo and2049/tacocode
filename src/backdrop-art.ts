@@ -1,8 +1,7 @@
 import { cell, type PixelCell } from "./logo-art"
+import type { Look } from "./look"
 
-const tints = ["#15111C", "#191420", "#1C1725", "#1F1A29", "#231D2E"] as const
-
-export function tint(x: number, y: number, width: number, height: number): string | undefined {
+export function tint(x: number, y: number, width: number, height: number, tints: readonly string[]): string | undefined {
   const u = x / width
   const v = y / height
   const bulge = Math.sin(Math.PI * u ** 1.4)
@@ -12,9 +11,10 @@ export function tint(x: number, y: number, width: number, height: number): strin
   return tints[Math.ceil(intensity * tints.length) - 1]
 }
 
-export function backdrop(columns: number, rows: number): readonly (readonly PixelCell[])[] {
+export function backdrop(columns: number, rows: number, look: Pick<Look, "base" | "tints">): readonly (readonly PixelCell[])[] {
   const height = rows * 2
+  const color = (x: number, y: number) => tint(x, y, columns, height, look.tints)
   return Array.from({ length: rows }, (_, y) =>
-    Array.from({ length: columns }, (_, x) => cell(tint(x, y * 2, columns, height), tint(x, y * 2 + 1, columns, height))),
+    Array.from({ length: columns }, (_, x) => cell(color(x, y * 2), color(x, y * 2 + 1), look.base)),
   )
 }

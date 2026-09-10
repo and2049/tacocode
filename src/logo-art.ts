@@ -1,5 +1,4 @@
 import { palette } from "./theme"
-import type { VimMode } from "../vendor/redsun/packages/tui/src/vim"
 
 export type PixelArt = Readonly<{ rows: readonly string[]; colors: Readonly<Record<string, string>> }>
 
@@ -42,38 +41,77 @@ export const bell: PixelArt = {
 
 export const taco: PixelArt = {
   rows: [
-    "        cf  gf          ",
-    "        cgccgf          ",
-    "     cchhccfccff        ",
-    "    idgdjccccjcklb      ",
-    "   iijedhegjmblbbbi     ",
-    "   nigmjcjollbbbbbbi    ",
-    "  nibbbccbbbbbbbbbbbi   ",
-    " iiebbhcllbbbbbbbbbbi   ",
-    "indejjcjbbbbbbbbbbbbij  ",
-    "liembehlbbbbbbbbbbbiid  ",
-    "ipeje bbbbbbbbbbbiiide  ",
-    "ihee mbiiiiiiimdmdmee   ",
-    "jih  biiiimdddeeeee     ",
-    " jibimdeeee             ",
-    "   eeee                 ",
+    "        gh  ih        ",
+    "        gjggii        ",
+    "     ccklgcmnomp      ",
+    "    qdirsgootujjvw    ",
+    "   xyzAdBsnCDbvEFFG   ",
+    "   HIJKsLsMvvFFbbFbD  ",
+    "  HxFbencFFFFFbbbbebD ",
+    " yqNFbujOvFbbbbbbbbPx ",
+    "QHRSzuguEbbbbbbbbbPeTN",
+    "UQfKVWXvbbPbbbbbbeeTTY",
+    "ZyfRf0VbbeeeeeeeeeT12f",
+    "ZyffWIeTeTTTTKKRKRrff ",
+    "sQBW0GT1K1KYYSfffff   ",
+    " lHwqKSffff           ",
+    "   ffff               ",
   ],
   colors: {
     b: "#F8AE1A",
     c: "#42773A",
     d: "#A72517",
-    e: "#652E11",
-    f: "#9CC858",
-    g: "#78AD54",
-    h: "#897C52",
-    i: "#C68037",
-    j: "#7B5A26",
-    k: "#6C8A2E",
-    l: "#F7DA3F",
-    m: "#C26F09",
-    n: "#E5A84A",
-    o: "#BAA210",
-    p: "#A85F41",
+    e: "#EB8920",
+    f: "#652E11",
+    g: "#2C6131",
+    h: "#9CC858",
+    i: "#78AD54",
+    j: "#679837",
+    k: "#897C52",
+    l: "#8A643C",
+    m: "#86B869",
+    n: "#5D9151",
+    o: "#49903C",
+    p: "#9DC06F",
+    q: "#C68037",
+    r: "#B73C27",
+    s: "#7B5A26",
+    t: "#5D5F2C",
+    u: "#6F722C",
+    v: "#F7DA3F",
+    w: "#E4BC2F",
+    x: "#B16629",
+    y: "#B26B4A",
+    z: "#8A6926",
+    A: "#534C25",
+    B: "#9D7D43",
+    C: "#627717",
+    D: "#C26F09",
+    E: "#FCCD2F",
+    F: "#F3CE12",
+    G: "#D29612",
+    H: "#E5A84A",
+    I: "#AA6F19",
+    J: "#909E37",
+    K: "#BD591D",
+    L: "#456027",
+    M: "#BAA210",
+    N: "#854C08",
+    O: "#DEC647",
+    P: "#F49B1F",
+    Q: "#C99841",
+    R: "#9B482C",
+    S: "#783F18",
+    T: "#DD7926",
+    U: "#E5C05A",
+    V: "#D9A62D",
+    W: "#412011",
+    X: "#907B35",
+    Y: "#954D19",
+    Z: "#CF8460",
+    0: "#261A0D",
+    1: "#D15C25",
+    2: "#AC4A1E",
   },
 }
 
@@ -98,18 +136,18 @@ export const wordmark: PixelArt = {
 export type PixelCell = Readonly<{ char: string; fg: string; bg: string }>
 export type PixelRun = Readonly<{ text: string; fg: string; bg: string }>
 
-export function cell(top: string | undefined, bottom: string | undefined): PixelCell {
+export function cell(top: string | undefined, bottom: string | undefined, base: string = palette.background): PixelCell {
   if (!top && !bottom) return { char: " ", fg: "transparent", bg: "transparent" }
-  const fg = top ?? palette.background
-  const bg = bottom ?? palette.background
+  const fg = top ?? base
+  const bg = bottom ?? base
   return { char: fg === bg ? " " : "▀", fg, bg }
 }
 
-export function pixels(art: PixelArt): readonly (readonly PixelCell[])[] {
+export function pixels(art: PixelArt, base: string = palette.background): readonly (readonly PixelCell[])[] {
   const width = Math.max(0, ...art.rows.map((row) => row.length))
   const color = (y: number, x: number) => art.colors[art.rows[y]?.[x] ?? " "]
   return Array.from({ length: Math.ceil(art.rows.length / 2) }, (_, y) =>
-    Array.from({ length: width }, (_, x) => cell(color(y * 2, x), color(y * 2 + 1, x))),
+    Array.from({ length: width }, (_, x) => cell(color(y * 2, x), color(y * 2 + 1, x), base)),
   )
 }
 
@@ -123,8 +161,8 @@ export function runs(row: readonly PixelCell[]): readonly PixelRun[] {
   return result
 }
 
-export function logoIcon(mode: VimMode): PixelArt {
-  return mode === "insert" ? bell : taco
+export function wordmarkWith(accent: string): PixelArt {
+  return { ...wordmark, colors: { ...wordmark.colors, P: accent } }
 }
 
 export function logoSize(width: number, height: number): "icon" | "wordmark" | "text" | "hidden" {

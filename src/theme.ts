@@ -9,6 +9,13 @@ export const palette = {
   muted: "#A29BAA",
 } as const
 
+export const warm = {
+  background: "#171310",
+  panel: "#251F1A",
+  element: "#2F2721",
+  borderSubtle: "#3A302A",
+} as const
+
 export const tacoTheme = {
   mode: "dark",
   theme: {
@@ -63,6 +70,11 @@ export const tacoTheme = {
     syntaxOperator: "#D6C2E9",
     syntaxPunctuation: "#B0A3BA",
   },
+} as const
+
+export const warmTheme = {
+  ...tacoTheme,
+  theme: { ...tacoTheme.theme, background: warm.background, backgroundPanel: warm.panel, backgroundElement: warm.element, borderSubtle: warm.borderSubtle },
 } as const
 
 export const fixedTheme = resolveThemeDocument(parseTheme(tacoTheme, "tacocode"), "dark")

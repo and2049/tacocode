@@ -1,10 +1,18 @@
-import { createMemo, createSignal } from "solid-js"
+import { createEffect, createMemo, createSignal, onCleanup } from "solid-js"
+import { useVim } from "../vendor/redsun/packages/tui/src/context/vim"
+import { useThemes } from "../vendor/redsun/packages/tui/src/context/theme"
 import { backdrop } from "./backdrop-art"
+import { look } from "./look"
 import { PixelRows } from "./logo"
 
 export function Backdrop() {
+  const vim = useVim()
+  const themes = useThemes()
   const [size, setSize] = createSignal({ width: 0, height: 0 })
-  const rows = createMemo(() => backdrop(size().width, size().height))
+  const current = createMemo(() => look(vim.mode))
+  const rows = createMemo(() => backdrop(size().width, size().height, current()))
+  createEffect(() => themes.set(current().theme))
+  onCleanup(() => themes.set(look("insert").theme))
   return (
     <box
       position="absolute"

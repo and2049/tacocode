@@ -16,7 +16,7 @@ import { allThemes as absoluteThemes } from ${JSON.stringify(theme)}
 import { allThemes as packageThemes } from "@opencode/tui/context/theme"
 assert.equal(absolute, relative)
 assert.equal(absoluteThemes, packageThemes)
-assert.deepEqual(Object.keys(packageThemes()), ["tacocode"])
+assert.deepEqual(Object.keys(packageThemes()), ["tacocode", "tacocode-warm"])
 `)
   const build = await Bun.build({
     entrypoints: [input], target: "bun",

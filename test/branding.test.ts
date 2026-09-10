@@ -1,8 +1,9 @@
 import { expect, test } from "bun:test"
 import { withoutTheme } from "../src/config"
-import { bell, logoIcon, logoSize, pixels, runs, taco, wordmark } from "../src/logo-art"
+import { bell, logoSize, pixels, runs, taco, wordmark, wordmarkWith } from "../src/logo-art"
 import { backdrop, tint } from "../src/backdrop-art"
-import { fixedTheme, palette } from "../src/theme"
+import { look } from "../src/look"
+import { fixedTheme, palette, warm, warmTheme } from "../src/theme"
 import { colorToHex } from "@opencode/theme/tui"
 import { overlays } from "../script/overlays"
 import pkg from "../package.json"
@@ -59,15 +60,21 @@ test("every overlay applies to the pinned redsun source", async () => {
     if (name === "tui/src/context/theme.tsx") {
       expect(result).not.toContain("config.theme")
       expect(result).not.toContain("draft.theme")
-      expect(result).toContain("return theme === FALLBACK_THEME")
+      expect(result).toContain('setStore("active", theme)\n        return true')
     }
   }
 })
 
-test("shows the bell while typing and the taco in vim normal and command modes", () => {
-  expect(logoIcon("insert")).toBe(bell)
-  expect(logoIcon("normal")).toBe(taco)
-  expect(logoIcon("command")).toBe(taco)
+test("shows the bell while typing and the warm taco look in vim normal and command modes", () => {
+  expect(look("insert")).toMatchObject({ icon: bell, accent: palette.purple, base: palette.background, theme: "tacocode" })
+  expect(look("normal")).toMatchObject({ icon: taco, accent: "#F2B33E", base: warm.background, theme: "tacocode-warm" })
+  expect(look("command")).toBe(look("normal"))
+  expect(look("normal").tints).not.toEqual(look("insert").tints)
+  expect(wordmarkWith("#F2B33E").colors.P).toBe("#F2B33E")
+  expect(wordmarkWith("#F2B33E").rows).toBe(wordmark.rows)
+  expect(warmTheme.theme.background).toBe(warm.background)
+  expect(warmTheme.theme.text).toBe(palette.white)
+  expect(pixels({ rows: ["W", " "], colors: wordmark.colors }, warm.background)[0]).toEqual([{ char: "▀", fg: palette.white, bg: warm.background }])
 })
 
 test("blank pixel cells stay transparent and runs merge identical neighbours", () => {
@@ -81,13 +88,16 @@ test("blank pixel cells stay transparent and runs merge identical neighbours", (
 })
 
 test("backdrop wave is deterministic, subtle, and leaves most of the screen untouched", () => {
-  const rows = backdrop(120, 40)
+  const rows = backdrop(120, 40, look("insert"))
   expect(rows).toHaveLength(40)
   expect(rows[0]).toHaveLength(120)
-  expect(backdrop(120, 40)).toEqual(rows)
+  expect(backdrop(120, 40, look("insert"))).toEqual(rows)
   const painted = rows.flat().filter((cell) => cell.bg !== "transparent").length
   expect(painted).toBeGreaterThan(120 * 40 * 0.1)
   expect(painted).toBeLessThan(120 * 40 * 0.5)
-  expect(tint(0, 0, 120, 80)).toBeUndefined()
-  expect(backdrop(0, 0)).toEqual([])
+  expect(tint(0, 0, 120, 80, look("insert").tints)).toBeUndefined()
+  expect(backdrop(0, 0, look("insert"))).toEqual([])
+  const warmRows = backdrop(120, 40, look("normal"))
+  expect(warmRows.flat().filter((cell) => cell.bg !== "transparent").length).toBe(painted)
+  expect(warmRows.flat().map((cell) => cell.bg)).not.toEqual(rows.flat().map((cell) => cell.bg))
 })
