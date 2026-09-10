@@ -47,11 +47,12 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
-      - run: gh release create "$TAG" artifacts/* --repo "$REPOSITORY" --generate-notes
+      - run: gh release create "$TAG" artifacts/* install install.ps1 --repo "$REPOSITORY" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
