@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.cache/
+*.tsbuildinfo
+.playwright-mcp/
+.bun-cache/
