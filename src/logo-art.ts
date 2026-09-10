@@ -1,57 +1,21 @@
 import { palette } from "./theme"
 
 export const bell = [
-  "             sDDs             ",
-  "             sDDs             ",
-  "             sDDs             ",
-  "      DPPPPPPPDDPPPPPPPD      ",
-  "      DPPPPPPPDDPPPPPPPD      ",
-  "      DPPPPPPPDDPPPPPPPD      ",
-  "   PPPWWWWLLLLLSSSSSSsssPPP   ",
-  "   PPPWWWWWWWWWSSSSSSsssPPP   ",
-  "   PPPWWWWWWWWWWSSSSSsssPPP   ",
-  " SPPsSWWWWWWWWWLLSSSSSSSSsPPS ",
-  " SPPsSWWWWWWWWWWWWSSSSSSSsPPS ",
-  " SPPsSWWWWWWWWWWWWSSSSSSSsPPS ",
-  "DPPsSSWWWWWWWWWWWWLSSSSSSSsPPD",
-  "DPPsSSWWWWWWWWWWWWWWSSSSSSsPPD",
-  "DPPsSSWWWWWWWWWWWWWWSSSSSSsPPD",
-  "PPPsSSWWWWWWWWWWWWWWLLSSSSsPPP",
-  "PPPsSSWWWWWWWWWWWWWWWWLSSSsPPP",
-  "PPPsSSLWWWWWWWWWWWWWWWWWSSsPPP",
-  "PPPsSSSWWWWWWWWWWWWOOODWSSsPPP",
-  "PPPsSSSWWWWWWWWWWWOOOsWWSSsPPP",
-  "PPPsSSSWWWWWWWWOOOOsWWWWSSsPPP",
-  "PPPsSSSSWWWWDOODWWWWWWWLSSsPPP",
-  "PPPsSSSSWWWDOODWWWWWWWLSSSsPPP",
-  "PPPsSSSSSWDOODWWWWWWLLSSSSsPPP",
-  "PPPsSSSSWDOOWWWWWLSSSSSSSSsPPP",
-  "PPPsSSSWWOOWWWWWLSSSSSSSSSsPPP",
-  "PPPsSSSWWWWWWWLLSSSSSSSSSSsPPP",
-  "PPPsSSSSSSSSSSSSSSSSSSSSSSsPPP",
-  "PPPsSSSSSSSSSSSSSSSSSSSSSSsPPP",
-  "PPPsSSSSSSSSSSSSSSSSSSSSSSsPPP",
-  "PPPDDDDDDDDDDDDDDDDDDDDDDDDPPP",
-  "PPPDDDDDDDDDDDDDDDDDDDDDDDDPPP",
-  "PPPDDDDDDDDDDDDDDDDDDDDDDDDPPP",
-  "                              ",
-] as const
-
-export const compactBell = [
-  "      D       ",
-  "   PPPDPPPP   ",
-  "  PWWWWSSSSP  ",
-  " PWWWWWSSSSSP ",
-  " PWWWWWWSSSSP ",
-  " PWWWWWWWSSSP ",
-  " PSWWWWWWLSSP ",
-  " PSSWWWWOOWSP ",
-  " PSSWWOOOWWSP ",
-  " PSSWOOOWWSSP ",
-  " PSSWWWWLSSSP ",
-  " PSSSSSSSSSSP ",
-  " PDDDDDDDDDDP ",
-  " PDDDDDDDDDDP ",
+  "   sPPPPPs   ",
+  " sPPPPPPPPPs ",
+  "sPLLLGMMMMPPs",
+  "PllLLLWGMKGMP",
+  "PlWWWLWWLLWGP",
+  "PlWWWWWLL WKP",
+  "PGWWWWL  kWSP",
+  "PgWWWL kkWWSP",
+  "PSGWL  kWWSSP",
+  "PSSLL  WWGSSP",
+  "PSKL kWWSSSSP",
+  "PSGLWWWGSSSSP",
+  "PSSGKSSSSSSSP",
+  "dDDDDDDDDDDDd",
+  "EeDDDDDDDDDeE",
 ] as const
 
 const letters: Record<string, readonly string[]> = {
@@ -72,12 +36,20 @@ export const wordmark = Array.from({ length: 7 }, (_, row) =>
 const colors: Record<string, string> = {
   " ": palette.background,
   P: palette.purple,
-  D: "#8240BE",
-  S: "#342047",
-  s: "#24192F",
   W: palette.white,
-  L: "#EEDFF8",
-  O: palette.background,
+  L: "#ECDCF7",
+  l: "#F1E8F1",
+  S: "#342047",
+  s: "#2F1B43",
+  M: "#3B2056",
+  G: "#665671",
+  g: "#58456A",
+  K: "#AD9CBA",
+  k: "#434045",
+  D: "#7B3CB4",
+  d: "#8C40C6",
+  E: "#7436A6",
+  e: "#683399",
 }
 
 export type PixelCell = Readonly<{ char: string; fg: string; bg: string }>
@@ -93,8 +65,8 @@ export function pixels(rows: readonly string[]): readonly (readonly PixelCell[])
   )
 }
 
-export function logoSize(width: number, height: number): "full" | "compact" | "wordmark" | "text" | "hidden" {
+export function logoSize(width: number, height: number): "bell" | "wordmark" | "text" | "hidden" {
   if (width < 8 || height < 10) return "hidden"
   if (width < wordmark[0]!.length || height < 20) return "text"
-  return height >= 38 ? "full" : height >= 26 ? "compact" : "wordmark"
+  return height >= 26 ? "bell" : "wordmark"
 }
