@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo=and2049/tacocode
+version=${VERSION:-}
+no_modify_path=false
+
+fail() { printf 'Error: %s\n' "$*" >&2; exit 1; }
+usage() {
+    cat <<EOF
+Taco Code Installer
+
+Usage: install [options]
+    -h, --help              Display this help message
+    -v, --version <version> Install a specific version (e.g., 0.1.0)
+        --no-modify-path    Don't modify shell configuration
+
+Environment:
+    VERSION                Release version (defaults to latest)
+    TACOCODE_INSTALL_DIR   Destination (defaults to ~/.local/bin)
+
+Example:
+    curl -fsSL https://github.com/$repo/releases/latest/download/install | bash
+
+Taco Code requires redsun on PATH, or an explicit --server URL.
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help) usage; exit 0 ;;
+        -v|--version)
+            [[ -n ${2:-} && $2 != -* ]] || fail '--version requires a version argument'
+            version=$2
+            shift 2
+            ;;
+        --no-modify-path) no_modify_path=true; shift ;;
+        *) fail "Unknown option: $1" ;;
+    esac
+done
+
+case "$(uname -s)" in
+    Linux) os=linux ;;
+    Darwin) os=darwin ;;
+    *) fail 'Supported platforms: Linux (glibc) and macOS. On Windows, use install.ps1.' ;;
+esac
+case "$(uname -m)" in
+    x86_64|amd64) arch=x64 ;;
+    aarch64|arm64) arch=arm64 ;;
+    *) fail 'Supported architectures: x64 and arm64.' ;;
+esac
+if [[ $os == darwin && $arch == x64 ]]; then
+    if [[ $(sysctl -n sysctl.proc_translated 2>/dev/null || true) == 1 ]]; then
+        arch=arm64
+    fi
+fi
+if [[ $os == linux ]]; then
+    libc=$(ldd --version 2>&1 || true)
+    [[ ! -f /etc/alpine-release && $libc != *musl* ]] || fail 'Linux releases require glibc; musl is not supported.'
+fi
+for tool in curl tar; do
+    command -v "$tool" >/dev/null 2>&1 || fail "$tool is required."
+done
+if command -v sha256sum >/dev/null 2>&1; then
+    hash_command=(sha256sum)
+elif command -v shasum >/dev/null 2>&1; then
+    hash_command=(shasum -a 256)
+else
+    fail 'sha256sum or shasum is required.'
+fi
+
+# Resolve latest once so the archive and checksum always come from the same release.
+if [[ -z $version ]]; then
+    release=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest")
+    version=$(printf '%s\n' "$release" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')
+    [[ -n $version ]] || fail 'Could not determine the latest release.'
+fi
+version=${version#v}
+[[ $version =~ ^[0-9][0-9A-Za-z.+-]*$ ]] || fail "Invalid release version: $version"
+filename="tacocode-$os-$arch.tar.gz"
+url="https://github.com/$repo/releases/download/v$version"
+install_dir=${TACOCODE_INSTALL_DIR:-$HOME/.local/bin}
+[[ $install_dir == /* ]] || fail 'TACOCODE_INSTALL_DIR must be an absolute path.'
+
+tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/tacocode-install.XXXXXXXX")
+staged=''
+cleanup() {
+    rm -rf "$tmp_dir"
+    if [[ -n $staged ]]; then rm -f "$staged"; fi
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+printf 'Installing Taco Code v%s (%s-%s)\n' "$version" "$os" "$arch"
+curl -fSL --retry 3 "$url/$filename" -o "$tmp_dir/$filename"
+curl -fsSL --retry 3 "$url/$filename.sha256" -o "$tmp_dir/checksum"
+read -r expected checksum_name < "$tmp_dir/checksum" || fail 'Invalid checksum file.'
+[[ $expected =~ ^[0-9a-fA-F]{64}$ && $checksum_name == "$filename" ]] || fail 'Invalid checksum file.'
+actual=$("${hash_command[@]}" "$tmp_dir/$filename")
+[[ ${actual%% *} == "$expected" ]] || fail 'Archive checksum verification failed.'
+tar -xzf "$tmp_dir/$filename" -C "$tmp_dir"
+[[ -f $tmp_dir/tacocode && ! -L $tmp_dir/tacocode ]] || fail 'Archive does not contain tacocode.'
+chmod 755 "$tmp_dir/tacocode"
+"$tmp_dir/tacocode" --version
+mkdir -p "$install_dir"
+# Stage on the destination filesystem, then replace atomically (also works while running).
+staged=$(mktemp "$install_dir/.tacocode.XXXXXXXX")
+cp "$tmp_dir/tacocode" "$staged"
+chmod 755 "$staged"
+mv -f "$staged" "$install_dir/tacocode"
+staged=''
+
+# Single-quote paths so spaces and shell metacharacters survive in startup files.
+quoted_dir=${install_dir//\'/\'\\\'\'}
+path_command="export PATH='$quoted_dir':\$PATH"
+config=''
+shell_name=${SHELL:-}
+case "${shell_name##*/}" in
+    bash)
+        config="$HOME/.bashrc"
+        if [[ $os == darwin ]]; then config="$HOME/.bash_profile"; fi
+        ;;
+    zsh) config="${ZDOTDIR:-$HOME}/.zshrc" ;;
+    fish)
+        config="${XDG_CONFIG_HOME:-$HOME/.config}/fish/config.fish"
+        fish_dir=${install_dir//\\/\\\\}
+        fish_dir=${fish_dir//\'/\\\'}
+        path_command="fish_add_path '$fish_dir'"
+        ;;
+    sh|ash|dash) config="$HOME/.profile" ;;
+esac
+if [[ $no_modify_path == false && -n $config ]]; then
+    if ! grep -Fxq "$path_command" "$config" 2>/dev/null; then
+        if mkdir -p "$(dirname "$config")" && printf '\n# Taco Code\n%s\n' "$path_command" >> "$config"; then
+            printf 'Added Taco Code to PATH in %s.\n' "$config"
+        else
+            printf 'Add to your shell configuration: %s\n' "$path_command"
+        fi
+    fi
+fi
+if [[ ${GITHUB_ACTIONS:-} == true && -n ${GITHUB_PATH:-} ]]; then
+    printf '%s\n' "$install_dir" >> "$GITHUB_PATH"
+fi
+printf '\nInstalled %s/tacocode\n' "$install_dir"
+if [[ $no_modify_path == true || -z $config ]]; then
+    printf 'Add to PATH if needed: %s\n' "$path_command"
+else
+    printf 'Open a new terminal, or run: %s\n' "$path_command"
+fi
+if ! command -v "${REDSUN_BIN:-redsun}" >/dev/null 2>&1; then
+    printf '\nFor local sessions, install redsun first:\n  curl -fsSL https://github.com/and2049/redsun/releases/latest/download/install | bash\n'
+fi
+printf '\nRun: tacocode [project-directory]\n'

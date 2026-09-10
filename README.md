@@ -2,9 +2,37 @@
 
 The redsun TUI with a fixed purple-and-white Taco Code theme and pixel-art bell logo. Sessions, tools, agents, models, integrations, and configuration are provided by your installed redsun.
 
-## Run
+## Install
 
-Install redsun first and put its executable on PATH. Extract the Taco Code release for your platform, put `tacocode` (`tacocode.exe` on Windows) on PATH, then run:
+Install [redsun](https://github.com/and2049/redsun#install) first for local sessions, then install Taco Code with one command:
+
+**Linux / macOS / WSL:**
+
+```sh
+curl -fsSL https://github.com/and2049/tacocode/releases/latest/download/install | bash
+```
+
+**Windows (PowerShell):**
+
+```powershell
+irm https://github.com/and2049/tacocode/releases/latest/download/install.ps1 | iex
+```
+
+The installers download the latest release for x64 or arm64, verify its SHA-256 checksum, and add the install directory to PATH. Linux requires glibc. The destination is `~/.local/bin` on Linux/macOS or `~/.redsun/bin` on Windows; override it with an absolute `TACOCODE_INSTALL_DIR`. On Linux/macOS, open a new terminal or use the printed PATH command afterward.
+
+To install a specific version or manage PATH yourself:
+
+```sh
+curl -fsSL https://github.com/and2049/tacocode/releases/latest/download/install | bash -s -- --version 0.1.0 --no-modify-path
+```
+
+```powershell
+& ([scriptblock]::Create((irm https://github.com/and2049/tacocode/releases/latest/download/install.ps1))) -Version 0.1.0 -NoModifyPath
+```
+
+Re-run the installer to update Taco Code. Close Taco Code before updating on Windows. You can also extract an archive from [Releases](https://github.com/and2049/tacocode/releases) and put `tacocode` (`tacocode.exe` on Windows) on PATH manually. An explicit `--server` URL can connect to an existing redsun server without a local redsun executable.
+
+## Run
 
 ```sh
 tacocode
