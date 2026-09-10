@@ -12,6 +12,10 @@ function replace(text: string, before: string, after: string): string {
 
 export const overlays: Readonly<Record<string, (text: string) => string>> = {
   "tui/src/component/logo.tsx": () => `export { Logo } from ${source("logo.tsx")}`,
+  "tui/src/routes/home.tsx": (text) => {
+    text = replace(text, '    <>\n      <box width="100%" flexShrink={0}>', '    <>\n      <Backdrop />\n      <box width="100%" flexShrink={0}>')
+    return `import { Backdrop } from ${source("backdrop.tsx")}\n${text}`
+  },
   "tui/src/theme/index.ts": (text) => {
     text = replace(text, "return { ...DEFAULT_THEMES, ...pluginThemes, ...customThemes }", "return { tacocode: tacoTheme }")
     return `import { tacoTheme } from ${source("theme.ts")}\n${text}`

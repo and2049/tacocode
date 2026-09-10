@@ -52,7 +52,7 @@ Taco Code uses redsun's configuration, state, history, and plugin directories, i
 
 The saved theme is excluded from Taco Code's effective configuration. Theme commands are hidden and the palette is fixed. Updating other preferences preserves the theme stored for the native redsun TUI. Other preference changes are shared between the two frontends.
 
-The icon and wordmark appear in standard-height terminals. The icon is the purple bell in vim insert mode and switches to the taco in normal and command mode; short terminals use the wordmark, and narrow terminals use a compact text logo so the prompt remains usable. The image background is deferred.
+The icon and wordmark appear in standard-height terminals. The icon is the purple bell in vim insert mode and switches to the taco in normal and command mode; short terminals use the wordmark, and narrow terminals use a compact text logo so the prompt remains usable. Behind the home screen, a faint purple crescent is drawn from half-block cells with the same technique as the logo, so it needs no image protocol support from the terminal.
 
 ## Build
 

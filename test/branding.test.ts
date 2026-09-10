@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { withoutTheme } from "../src/config"
-import { bell, logoIcon, logoSize, pixels, taco, wordmark } from "../src/logo-art"
+import { bell, logoIcon, logoSize, pixels, runs, taco, wordmark } from "../src/logo-art"
+import { backdrop, tint } from "../src/backdrop-art"
 import { fixedTheme, palette } from "../src/theme"
 import { colorToHex } from "@opencode/theme/tui"
 import { overlays } from "../script/overlays"
@@ -53,6 +54,7 @@ test("every overlay applies to the pinned redsun source", async () => {
       expect(result).toContain('renderer.setTerminalTitle("tacocode")')
       expect(result).toContain('name: "permission.mode"')
     }
+    if (name === "tui/src/routes/home.tsx") expect(result).toContain("<Backdrop />\n      <box")
     if (name === "tui/src/component/dialog-config.tsx") expect(result).not.toContain('title: "Theme"')
     if (name === "tui/src/context/theme.tsx") {
       expect(result).not.toContain("config.theme")
@@ -66,4 +68,26 @@ test("shows the bell while typing and the taco in vim normal and command modes",
   expect(logoIcon("insert")).toBe(bell)
   expect(logoIcon("normal")).toBe(taco)
   expect(logoIcon("command")).toBe(taco)
+})
+
+test("blank pixel cells stay transparent and runs merge identical neighbours", () => {
+  const blank = { char: " ", fg: "transparent", bg: "transparent" }
+  expect(pixels({ rows: [" W", "  "], colors: wordmark.colors })[0]).toEqual([blank, { char: "▀", fg: palette.white, bg: palette.background }])
+  expect(runs([blank, blank, { char: "▀", fg: "#000000", bg: "#FFFFFF" }, { char: "▀", fg: "#000000", bg: "#FFFFFF" }, blank])).toEqual([
+    { text: "  ", fg: "transparent", bg: "transparent" },
+    { text: "▀▀", fg: "#000000", bg: "#FFFFFF" },
+    { text: " ", fg: "transparent", bg: "transparent" },
+  ])
+})
+
+test("backdrop wave is deterministic, subtle, and leaves most of the screen untouched", () => {
+  const rows = backdrop(120, 40)
+  expect(rows).toHaveLength(40)
+  expect(rows[0]).toHaveLength(120)
+  expect(backdrop(120, 40)).toEqual(rows)
+  const painted = rows.flat().filter((cell) => cell.bg !== "transparent").length
+  expect(painted).toBeGreaterThan(120 * 40 * 0.1)
+  expect(painted).toBeLessThan(120 * 40 * 0.5)
+  expect(tint(0, 0, 120, 80)).toBeUndefined()
+  expect(backdrop(0, 0)).toEqual([])
 })

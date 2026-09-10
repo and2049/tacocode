@@ -1,16 +1,16 @@
 import { For, Show, createMemo } from "solid-js"
 import { useTerminalDimensions } from "@opentui/solid"
 import { useVim } from "../vendor/redsun/packages/tui/src/context/vim"
-import { logoIcon, logoSize, pixels, wordmark, type PixelCell } from "./logo-art"
+import { logoIcon, logoSize, pixels, runs, wordmark, type PixelCell } from "./logo-art"
 import { palette } from "./theme"
 
-function PixelArt(props: { rows: readonly (readonly PixelCell[])[] }) {
+export function PixelRows(props: { rows: readonly (readonly PixelCell[])[] }) {
   return (
     <box flexDirection="column" flexShrink={0}>
       <For each={props.rows}>
         {(row) => (
           <text selectable={false} height={1}>
-            <For each={row}>{(cell) => <span style={{ fg: cell.fg, bg: cell.bg }}>{cell.char}</span>}</For>
+            <For each={runs(row)}>{(run) => <span style={{ fg: run.fg, bg: run.bg }}>{run.text}</span>}</For>
           </text>
         )}
       </For>
@@ -29,13 +29,13 @@ export function Logo() {
     <Show when={size() !== "hidden"}>
       <box alignItems="center" flexShrink={0}>
         <Show when={size() === "icon"}>
-          <PixelArt rows={icon()} />
+          <PixelRows rows={icon()} />
           <box height={1} />
         </Show>
         <Show when={size() !== "text"} fallback={
           <text selectable={false}><span style={{ fg: palette.white }}>TACO</span><span style={{ fg: palette.purple }}>CODE</span></text>
         }>
-          <PixelArt rows={word} />
+          <PixelRows rows={word} />
         </Show>
       </box>
     </Show>

@@ -96,17 +96,31 @@ export const wordmark: PixelArt = {
 }
 
 export type PixelCell = Readonly<{ char: string; fg: string; bg: string }>
+export type PixelRun = Readonly<{ text: string; fg: string; bg: string }>
+
+export function cell(top: string | undefined, bottom: string | undefined): PixelCell {
+  if (!top && !bottom) return { char: " ", fg: "transparent", bg: "transparent" }
+  const fg = top ?? palette.background
+  const bg = bottom ?? palette.background
+  return { char: fg === bg ? " " : "▀", fg, bg }
+}
 
 export function pixels(art: PixelArt): readonly (readonly PixelCell[])[] {
   const width = Math.max(0, ...art.rows.map((row) => row.length))
-  const color = (y: number, x: number) => art.colors[art.rows[y]?.[x] ?? " "] ?? palette.background
+  const color = (y: number, x: number) => art.colors[art.rows[y]?.[x] ?? " "]
   return Array.from({ length: Math.ceil(art.rows.length / 2) }, (_, y) =>
-    Array.from({ length: width }, (_, x) => {
-      const top = color(y * 2, x)
-      const bottom = color(y * 2 + 1, x)
-      return { char: top === bottom ? " " : "▀", fg: top, bg: bottom }
-    }),
+    Array.from({ length: width }, (_, x) => cell(color(y * 2, x), color(y * 2 + 1, x))),
   )
+}
+
+export function runs(row: readonly PixelCell[]): readonly PixelRun[] {
+  const result: PixelRun[] = []
+  for (const { char, fg, bg } of row) {
+    const last = result.at(-1)
+    if (last && last.fg === fg && last.bg === bg && last.text[0] === char) result[result.length - 1] = { ...last, text: last.text + char }
+    else result.push({ text: char, fg, bg })
+  }
+  return result
 }
 
 export function logoIcon(mode: VimMode): PixelArt {
