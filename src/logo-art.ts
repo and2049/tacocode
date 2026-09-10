@@ -1,28 +1,40 @@
 import { palette } from "./theme"
 
 export const bell = [
-  "         sDs        ",
-  "         sPs        ",
-  "    DPPPPDPPPPPD    ",
-  "    PPPPPDPPPPPP    ",
-  "  PPWWWWWWSSSSSSPP  ",
-  "  PPWWWWWWSSSSSSPP  ",
-  " sPW WWWWWWSSSSSSPs ",
-  " sPS WWWWWWWSSSSSPs ",
-  " DPSSWWWWWWWLSSSSPP ",
-  " PPSSWWWWWWWWSSSSPP ",
-  " PPSSWWWWWWWWWSSSPP ",
-  " PPSSWWWWWWWWWLSSPP ",
-  " PPSSLWWWWWWWWWWSPP ",
-  " PPSSSWWWWWWOOOWSPP ",
-  " PPSSSWWWWOOOOWLSPP ",
-  " PPSSSSWWOOOWWLSSPP ",
-  " PPSSSSWOOOWWLSSSPP ",
-  " PPSSSWWOOWWLSSSSPP ",
-  " PPSSSWWWWLLSSSSSPP ",
-  " PPSSSSSSSSSSSSSSPP ",
-  " PDDDDDDDDDDDDDDDDP ",
-  " PDDDDDDDDDDDDDDDDP ",
+  "             sDDs             ",
+  "             sDDs             ",
+  "             sDDs             ",
+  "      DPPPPPPPDDPPPPPPPD      ",
+  "      DPPPPPPPDDPPPPPPPD      ",
+  "      DPPPPPPPDDPPPPPPPD      ",
+  "   PPPWWWWLLLLLSSSSSSsssPPP   ",
+  "   PPPWWWWWWWWWSSSSSSsssPPP   ",
+  "   PPPWWWWWWWWWWSSSSSsssPPP   ",
+  " SPPsSWWWWWWWWWLLSSSSSSSSsPPS ",
+  " SPPsSWWWWWWWWWWWWSSSSSSSsPPS ",
+  " SPPsSWWWWWWWWWWWWSSSSSSSsPPS ",
+  "DPPsSSWWWWWWWWWWWWLSSSSSSSsPPD",
+  "DPPsSSWWWWWWWWWWWWWWSSSSSSsPPD",
+  "DPPsSSWWWWWWWWWWWWWWSSSSSSsPPD",
+  "PPPsSSWWWWWWWWWWWWWWLLSSSSsPPP",
+  "PPPsSSWWWWWWWWWWWWWWWWLSSSsPPP",
+  "PPPsSSLWWWWWWWWWWWWWWWWWSSsPPP",
+  "PPPsSSSWWWWWWWWWWWWOOODWSSsPPP",
+  "PPPsSSSWWWWWWWWWWWOOOsWWSSsPPP",
+  "PPPsSSSWWWWWWWWOOOOsWWWWSSsPPP",
+  "PPPsSSSSWWWWDOODWWWWWWWLSSsPPP",
+  "PPPsSSSSWWWDOODWWWWWWWLSSSsPPP",
+  "PPPsSSSSSWDOODWWWWWWLLSSSSsPPP",
+  "PPPsSSSSWDOOWWWWWLSSSSSSSSsPPP",
+  "PPPsSSSWWOOWWWWWLSSSSSSSSSsPPP",
+  "PPPsSSSWWWWWWWLLSSSSSSSSSSsPPP",
+  "PPPsSSSSSSSSSSSSSSSSSSSSSSsPPP",
+  "PPPsSSSSSSSSSSSSSSSSSSSSSSsPPP",
+  "PPPsSSSSSSSSSSSSSSSSSSSSSSsPPP",
+  "PPPDDDDDDDDDDDDDDDDDDDDDDDDPPP",
+  "PPPDDDDDDDDDDDDDDDDDDDDDDDDPPP",
+  "PPPDDDDDDDDDDDDDDDDDDDDDDDDPPP",
+  "                              ",
 ] as const
 
 export const compactBell = [
@@ -84,5 +96,5 @@ export function pixels(rows: readonly string[]): readonly (readonly PixelCell[])
 export function logoSize(width: number, height: number): "full" | "compact" | "wordmark" | "text" | "hidden" {
   if (width < 8 || height < 10) return "hidden"
   if (width < wordmark[0]!.length || height < 20) return "text"
-  return height >= 34 ? "full" : height >= 26 ? "compact" : "wordmark"
+  return height >= 38 ? "full" : height >= 26 ? "compact" : "wordmark"
 }

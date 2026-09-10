@@ -33,7 +33,8 @@ test("logo scales down before it consumes the prompt area", () => {
   expect(logoSize(40, 20)).toBe("text")
   expect(logoSize(100, 9)).toBe("hidden")
   expect(new Set(wordmark.map((row) => row.length)).size).toBe(1)
-  expect(pixels(bell)).toHaveLength(11)
+  expect(new Set(bell.map((row) => row.length)).size).toBe(1)
+  expect(pixels(bell)).toHaveLength(17)
   expect(pixels(wordmark)).toHaveLength(4)
   expect(pixels(["WP", "PW"])[0]).toEqual([
     { char: "▀", fg: palette.white, bg: palette.purple },
