@@ -55,7 +55,7 @@ Release targets: Windows, Linux (glibc), and macOS on x64 and arm64. Native buil
 
 ## Source and updates
 
-The `vendor/redsun` Git submodule pins the baseline to `56c66ad69a81c2d8ee1805fb3a704db68b6b7b62`. Taco Code's own version is independent of the redsun service version. The V2 health contract is validated on connection; compatibility with later protocol changes requires updating the source baseline.
+The `vendor/redsun` Git submodule pins the baseline to `56c66ad69a81c2d8ee1805fb3a704db68b6b7b62`. The version shown in the TUI is the connected redsun service's version; Taco Code's own version is only printed by `--version`. The V2 health contract is validated on connection; compatibility with later protocol changes requires updating the source baseline.
 
 `script/overlays.ts` contains checked, build-time changes to the original TUI. It generates files under `.cache/overlays`, preserving upstream imports and applying the regular OpenTUI Solid transform. Layout and interaction code comes directly from redsun. Custom artwork and palette live under `src/`. A changed upstream patch point fails the build rather than silently dropping a customization.
 

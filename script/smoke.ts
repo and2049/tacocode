@@ -121,6 +121,8 @@ try {
   assert.equal(await backend("service", "status"), "stopped")
   const first = await launch("first")
   const frame = await first.waitFor("Ask anything")
+  assert.ok(first.text(frame).includes((await backend("--version")).split(/s+/).pop()!.replace(/^v/, "")), `home footer should show the redsun version:
+${first.text(frame)}`)
   const state = path.join(env.XDG_STATE_HOME, "redsun")
   const registrationName = (await readdir(state)).find((name) => /^service(?:-[\w.-]+)?\.json$/.test(name))
   assert.ok(registrationName)

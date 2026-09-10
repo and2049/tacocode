@@ -26,7 +26,7 @@ export function main(input: ReturnType<typeof argumentsFor>) {
     const runFork = Effect.runForkWith(context)
     const service = server.service
     yield* run({
-      app: { name: "tacocode", version: pkg.version, channel: "latest" },
+      app: { name: "tacocode", version: server.version, channel: "latest" },
       server: {
         endpoint: server.endpoint,
         service: service ? {
