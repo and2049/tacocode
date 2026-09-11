@@ -156,6 +156,10 @@ try {
   const version = (await backend("--version")).split(/\s+/).pop()!.replace(/^v/, "")
   assert.ok(first.text(frame).includes(version), `home footer should show the redsun version:\n${first.text(frame)}`)
   assert.ok(!first.text(frame).includes("██╗"), "the redsun logo must be replaced")
+  if (process.platform === "win32") {
+    const listed = await backend("mcp", "list")
+    assert.ok(listed.includes("doordash"), `doordash-mcp should be registered with the service:\n${listed}`)
+  }
   const extracted = await readdir(path.join(env.XDG_CACHE_HOME, "tacocode"))
   assert.ok(extracted.some((name) => name.startsWith("plugin-")), extracted.join(","))
   await mkdir(path.join(root, ".cache"), { recursive: true })
@@ -195,7 +199,7 @@ try {
   assert.notEqual(await backend("service", "status"), "stopped")
   assert.equal(await Bun.file(path.join(config, "cli.json")).text(), cliJson)
   console.log(
-    "PASS: cold start, plugin extraction, fixed theme, warm normal mode, shared service, command palette, settings, resizing, detach, cli.json untouched",
+    "PASS: cold start, plugin extraction, doordash mcp, fixed theme, warm normal mode, shared service, command palette, settings, resizing, detach, cli.json untouched",
   )
 } catch (error) {
   console.error(error)
@@ -214,5 +218,13 @@ try {
   await Promise.all(clients.map((client) => client.process.exited))
   clients.length = 0
   Bun.gc(true)
-  await rm(directory, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 })
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await rm(directory, { recursive: true, force: true })
+      break
+    } catch (error) {
+      if (attempt === 60) throw error
+      await Bun.sleep(250)
+    }
+  }
 }

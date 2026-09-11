@@ -13,6 +13,7 @@ test("embeds every plugin source file and declares the redsun plugin API", async
   expect(files["tui.tsx"]).toContain("api: 1")
   expect(files["tui.tsx"]).toContain('replace: "home.logo"')
   expect(files["tui.tsx"]).toContain('append: "home.backdrop"')
+  expect(files["tui.tsx"]).toContain("connectServers(context)")
   for (const text of Object.values(files)) expect(text).not.toMatch(/from "(?!\.\/|solid-js|@opentui\/solid)/)
 })
 
