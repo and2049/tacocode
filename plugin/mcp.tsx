@@ -1,7 +1,7 @@
 import { createEffect, createRoot } from "solid-js"
 import type { Context, McpServerConfig } from "./redsun"
 
-export const doordash: McpServerConfig = { type: "local", command: ["npx", "-y", "doordash-mcp", "serve"] }
+export const doordash: McpServerConfig = { type: "local", command: ["npx", "-y", "doordash-mcp@0.1.3", "serve"] }
 
 export function serversFor(platform: string): Readonly<Record<string, McpServerConfig>> {
   return platform === "win32" ? { doordash } : {}

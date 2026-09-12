@@ -32,15 +32,15 @@ Re-run the installer to update Taco Code. Close Taco Code before updating on Win
 
 ## DoorDash
 
-On Windows, Taco Code also connects [doordash-mcp](https://github.com/and2049/doordash-mcp) so the agent can browse restaurants, edit the cart, and order. The plugin registers the server with the running redsun service for the current directory at launch; nothing is written to your redsun configuration, and the registration is gone when the service restarts. Until then, other redsun clients opened in the same directory see the server too. The server starts as `npx -y doordash-mcp serve`, so Node.js 22 or newer must be on PATH.
+On Windows, Taco Code also connects [doordash-mcp](https://github.com/and2049/doordash-mcp) so the agent can browse restaurants, edit the cart, and order. The plugin registers the server with the running redsun service for the current directory at launch; nothing is written to your redsun configuration, and the registration is gone when the service restarts. Until then, other redsun clients opened in the same directory see the server too. The server starts as `npx -y doordash-mcp@0.1.3 serve`, so Node.js 22 or newer must be on PATH.
 
 Sign in once before the first order:
 
 ```powershell
-npx -y doordash-mcp login-help
+npx -y doordash-mcp@0.1.3 login-help
 ```
 
-Run the printed command, finish the DoorDash sign-in in Chrome, then run `npx -y doordash-mcp attach` and `npx -y doordash-mcp verify`. Sessions are stored with Windows DPAPI and survive upgrades. `place_order` charges the saved card on your DoorDash account.
+Run the printed command, finish the DoorDash sign-in in Chrome, then run `npx -y doordash-mcp@0.1.3 attach` and `npx -y doordash-mcp@0.1.3 verify`. Sessions are stored with Windows DPAPI and survive upgrades. `place_order` charges the saved card on your DoorDash account.
 
 ## Run
 

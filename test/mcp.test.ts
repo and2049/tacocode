@@ -17,7 +17,7 @@ function fake(add: Context["client"]["mcp"]["add"]) {
 }
 
 test("ships doordash-mcp over stdio on Windows only", () => {
-  expect(doordash.command).toEqual(["npx", "-y", "doordash-mcp", "serve"])
+  expect(doordash.command).toEqual(["npx", "-y", "doordash-mcp@0.1.3", "serve"])
   expect(serversFor("win32")).toEqual({ doordash })
   expect(serversFor("linux")).toEqual({})
 })
